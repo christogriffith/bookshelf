@@ -1,3 +1,9 @@
+// TODO licensing is boring af. The render() code at the bottom is blatantly stolen from an instructables.com article. 
+// That code is under a beerware license. Link to the article is https://www.instructables.com/id/Bitbanging-step-by-step-Arduino-control-of-WS2811-/
+//
+// Someday I'll stop being lazy and learn the gcc inline assembly biz enough to not need to generate a separate function for each pin.
+// But maybe I won't. If it fits (in memory), I sits.
+
 enum ShelfName
 {
     LEFT_1,
@@ -100,6 +106,7 @@ void Render##SHELFNAME(const Shelf &shelf)      \
 
 
 #if 0 // For reference only
+// This is the function referenced in the header comment. I've already molested it. But it's close enough to get the point across.
 void render(const Shelf &shelf, volatile byte &renderPort, uint_fast8_t renderPin) 
 {
   if(!rgb_arr) return;

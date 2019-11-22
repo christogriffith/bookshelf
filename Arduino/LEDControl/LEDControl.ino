@@ -1,37 +1,9 @@
-/*
-  Blink
-
-  Turns an LED on for one second, then off for one second, repeatedly.
-
-  Most Arduinos have an on-board LED you can control. On the UNO, MEGA and ZERO
-  it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
-  the correct LED pin independent of which board is used.
-  If you want to know what pin the on-board LED is connected to on your Arduino
-  model, check the Technical Specs of your board at:
-  https://www.arduino.cc/en/Main/Products
-
-  modified 8 May 2014
-  by Scott Fitzgerald
-  modified 2 Sep 2016
-  by Arturo Guadalupi
-  modified 8 Sep 2016
-  by Colby Newman
-
-  This example code is in the public domain.
-
-  http://www.arduino.cc/en/Tutorial/Blink
-*/
-
 #include "Renderer.h"
 
 #define MAX_LEDS      (55)          // Maximum number of LEDs per shelf; used to allocate memory
 #define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
 #define NUM_BYTES     (NUM_RGB*3)   // Number of LEDs (3 per each WS281X)
 #define NUM_BITS      (8)           // Constant value: bits per byte
-
-const unsigned int STARTUP_DELAY = 200UL;     // Wait time before enabling the relays
-const uint8_t RELAY1_OUTPUT_ENABLE_PIN = 0; 
-const uint8_t RELAY2_OUTPUT_ENABLE_PIN = 1; 
 
 // Just for convenience when configuring digital outputs
 const uint8_t digitalOutPins[] = 
@@ -92,10 +64,6 @@ void setup() {
     digitalWrite(digitalOutPins[i], LOW);
   }
   
-  delay(STARTUP_DELAY);
-  digitalWrite(RELAY1_OUTPUT_ENABLE_PIN, HIGH);   // turn the relay on
-  digitalWrite(RELAY2_OUTPUT_ENABLE_PIN, HIGH);   // turn the relay on
-
   shelves[LEFT_1].program = loopFadeInOut;
   shelves[LEFT_2].program = loopFadeInOut;
   shelves[LEFT_3].program = loopFadeInOut;

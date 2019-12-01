@@ -69,8 +69,8 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(0, INPUT);
   pinMode(1, OUTPUT);
-    Serial.begin(9600);
-    //Serial.println("Setting up...");
+  Serial.begin(9600);
+  Serial.println("Setting up...");
     softSer.begin(9600);
   randomSeed(analogRead(0));
    
@@ -94,7 +94,7 @@ void setup() {
         shelves[i].context.needsUpdate = true;
     }
 
-  //Serial.println("Setup complete.");
+  Serial.println("Setup complete.");
 }
 
 void loopFullWhite(Shelf &shelf)
@@ -200,6 +200,8 @@ void loop() {
   {
     Serial.println("SoftSerial received: ");
     Serial.write(buf, num);
+    buf[0]++;
+    softSer.write(buf, num);
   }
   return;
     for (int i = 0; i < (int)8/*NUM_SHELVES*/; i++) {

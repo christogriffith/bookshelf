@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "SoftwareSerial.h"
 
 #define MAX_LEDS      (55)          // Maximum number of LEDs per shelf; used to allocate memory
 #define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
@@ -54,9 +55,23 @@ enum mode
   NUM_FUNCS
 };
 
+// On the serial cable, the 5V transmit line (A4 on the Arduino side) is at 5V;
+// there is a 4.1K/2.2K divider under the shrink tube to put us in the 3.2V area.
+// Arduino            RPi header    Notes
+// A5 (Rx) -- Purp --  8 (Tx)       5V the whole way; the pi's 3.3V will trigger the Ard's Rx
+// A4 (Tx) -- Blue -- 10 (Rx)       5V at Arduino Tx, divided to 3.2V at pi's side
+SoftwareSerial softSer(A5, A4); // (Rx, Tx)
+
 // the setup function runs once when you press reset or power the board
 void setup() {
+  pinMode(A5, INPUT);
+  pinMode(A4, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(0, INPUT);
+  pinMode(1, OUTPUT);
     Serial.begin(9600);
+    //Serial.println("Setting up...");
+    softSer.begin(9600);
   randomSeed(analogRead(0));
    
   for (int i = 0; i < NUM_DIGITAL_OUT_PINS; i++) {
@@ -74,15 +89,25 @@ void setup() {
   shelves[RIGHT_3].program = loopFadeInOut;
   shelves[RIGHT_4].program = loopFadeInOut;
   shelves[CENT_RIGHT].program = loopFadeInOut;
+
+  for (int i = 0; i < (int)NUM_SHELVES; i++) {
+        shelves[i].context.needsUpdate = true;
+    }
+
+  //Serial.println("Setup complete.");
 }
 
 void loopFullWhite(Shelf &shelf)
 {
-  for(unsigned int i=0; i<shelf.numLeds; i++)
+  if (shelf.context.needsUpdate)
   {
-      setColorRGB(shelf.data, i, 255, 255, 255);
+    for(unsigned int i=0; i<shelf.numLeds; i++)
+    {
+        setColorRGB(shelf.data, i, 64, 64, 64);
+    }
+    shelf.renderer(shelf);
+    shelf.context.needsUpdate = false;
   }
-  shelf.renderer(shelf);
 }
 
 void loopMover(Shelf &shelf)
@@ -134,20 +159,14 @@ void loopFadeInOut(Shelf &shelf)
   {
     if (shelf.context.color == 1)
     {
-        if (i > shelf.numLeds/2)
-            setColorRGB(shelf.data, i, shelf.context.j, 0, 0);
-        else
-            setColorRGB(shelf.data, i, 0, shelf.context.j, 0);
+      setColorRGB(shelf.data, i, shelf.context.j, 0, 0);
     }
     else
     {
-        if (i > shelf.numLeds/2)
-            setColorRGB(shelf.data, i, 0, shelf.context.j, 0);
-        else
-            setColorRGB(shelf.data, i, shelf.context.j, 0, 0);
-            
+      setColorRGB(shelf.data, i, 0, shelf.context.j, 0);
     }
   }
+  
   shelf.context.j += shelf.context.dir;
   if (shelf.context.j == 0) {
     shelf.context.color = 1 - shelf.context.color;
@@ -174,7 +193,16 @@ void setColorRGB(uint8_t *data, uint16_t idx, uint8_t r, uint8_t g, uint8_t b)
 
 // the loop function runs over and over again forever
 void loop() {
-    for (int i = 0; i < (int)NUM_SHELVES; i++) {
+  byte buf[32];
+  int num;
+
+  if ((num = softSer.readBytes(buf, 32)) > 0)
+  {
+    Serial.println("SoftSerial received: ");
+    Serial.write(buf, num);
+  }
+  return;
+    for (int i = 0; i < (int)8/*NUM_SHELVES*/; i++) {
         shelves[i].program(shelves[i]);
     }
   //delay(5);

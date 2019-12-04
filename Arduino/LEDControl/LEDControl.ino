@@ -20,8 +20,8 @@ const int NUM_DIGITAL_OUT_PINS = sizeof(digitalOutPins) / sizeof(uint8_t);
 // So we'll generate a full rendering function for each pin. No biggie.
 RENDER_FUNC(LEFT_1,     PORTD, PORTD2);
 RENDER_FUNC(LEFT_2,     PORTD, PORTD3);
-RENDER_FUNC(LEFT_3,     PORTD, PORTD4);
-RENDER_FUNC(LEFT_4,     PORTD, PORTD5);
+RENDER_FUNC(LEFT_3,     PORTD, PORTD5); // Yes, I swapped L3 & 4 electrically. Whoops.
+RENDER_FUNC(LEFT_4,     PORTD, PORTD4);
 RENDER_FUNC(CENT_LEFT,  PORTD, PORTD6);
 RENDER_FUNC(CENT_RIGHT, PORTD, PORTD7);
 RENDER_FUNC(RIGHT_1,    PORTB, PORTB0);
@@ -34,8 +34,8 @@ uint8_t colorData[NUM_SHELVES][MAX_LEDS];
 Shelf shelves[] = 
 {   
     //Shelf  #LEDs Rendering func name        Prog  Context                  Data pointer
-    { LEFT_1,   NUM_RGB, RENDER_FUNC_NAME(LEFT_1),  NULL, {0, 0, 0, 0, 0, false},  colorData[LEFT_1]  },
-    { LEFT_2,   NUM_RGB, RENDER_FUNC_NAME(LEFT_2),  NULL, {0, 0, 0, 0, 1, false},  colorData[LEFT_2]  },
+    { LEFT_1,   NUM_RGB, RENDER_FUNC_NAME(LEFT_1),  NULL, {0, 0, 0, 0, 1, false},  colorData[LEFT_1]  },
+    { LEFT_2,   NUM_RGB, RENDER_FUNC_NAME(LEFT_2),  NULL, {0, 0, 0, 0, 0, false},  colorData[LEFT_2]  },
     { LEFT_3,   NUM_RGB, RENDER_FUNC_NAME(LEFT_3),  NULL, {0, 0, 0, 0, 1, false},  colorData[LEFT_3]  },
     { LEFT_4,   NUM_RGB, RENDER_FUNC_NAME(LEFT_4),  NULL, {0, 0, 0, 0, 0, false},  colorData[LEFT_4]  },
     { RIGHT_1,  NUM_RGB, RENDER_FUNC_NAME(RIGHT_1), NULL, {0, 0, 0, 0, 0, false},  colorData[RIGHT_1] },
@@ -166,16 +166,18 @@ void loopFadeInOut(Shelf &shelf)
 void loop() {
   byte buf[32];
   int num;
-
-  if ((num = softSer.readBytes(buf, 32)) > 0)
+  if (softSer.available() > 0)
   {
-    Serial.println("SoftSerial received: ");
-    Serial.write(buf, num);
-    buf[0]++;
-    softSer.write(buf, num);
+    if ((num = softSer.readBytes(buf, 32)) > 0)
+    {
+      Serial.println("SoftSerial received: ");
+      Serial.write(buf, num);
+      buf[0]++;
+      softSer.write(buf, num);
+    }
   }
 
-    for (int i = 0; i < (int)8/*NUM_SHELVES*/; i++) {
+    for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);
     }
   //delay(5);

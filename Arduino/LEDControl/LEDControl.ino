@@ -1,7 +1,7 @@
 #include "Renderer.h"
 #include "SoftwareSerial.h"
 
-#define MAX_LEDS      (55)          // Maximum number of LEDs per shelf; used to allocate memory
+#define MAX_LEDS      (60)          // Maximum number of LEDs per shelf; used to allocate memory
 #define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
 #define NUM_BYTES     (NUM_RGB*3)   // Number of LEDs (3 per each WS281X)
 #define NUM_BITS      (8)           // Constant value: bits per byte

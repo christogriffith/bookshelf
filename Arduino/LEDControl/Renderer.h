@@ -80,7 +80,7 @@ void Render##SHELFNAME(const Shelf &shelf)      \
     nbits= NUM_BITS                             \
     ;                                           \
   volatile uint16_t                             \
-    nbytes = NUM_BYTES;                         \
+    nbytes = shelf.numLeds * 3;                         \
   asm volatile(                                 \
                                                 \
    "nextbit_%=:\n\t"                               \

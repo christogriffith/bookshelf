@@ -40,6 +40,25 @@ struct Shelf
     Program program;
     RenderContext context;
     uint8_t *data;
+
+    void SetPixelRGB(uint_fast16_t pix, uint_fast8_t r, uint_fast8_t g, uint_fast8_t b) 
+    {
+      if (pix < this->numLeds) 
+      {
+        uint8_t *p = &this->data[pix*3]; 
+        *p++ = g;  
+        *p++ = r;
+        *p = b;
+      }
+    }
+
+    void SetOneColor(uint_fast8_t r, uint_fast8_t g, uint_fast8_t b)
+    {
+        for (unsigned int i = 0; i < this->numLeds; i++)
+        {
+            this->SetPixelRGB(i, r, g, b);
+        }
+    }
 };
 
 #define RENDER_FUNC_NAME(SHELFNAME) Render##SHELFNAME

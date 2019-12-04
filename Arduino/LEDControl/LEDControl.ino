@@ -103,7 +103,7 @@ void loopFullWhite(Shelf &shelf)
   {
     for(unsigned int i=0; i<shelf.numLeds; i++)
     {
-        setColorRGB(shelf.data, i, 64, 64, 64);
+        shelf.SetPixelRGB(i, 64, 64, 64);
     }
     shelf.renderer(shelf);
     shelf.context.needsUpdate = false;
@@ -117,9 +117,9 @@ void loopMover(Shelf &shelf)
   for(i = 0; i < shelf.numLeds; i++)
   {
     if (i == shelf.context.mover)
-      setColorRGB(shelf.data, shelf.context.mover, 32, 32, 32);
+      shelf.SetPixelRGB(shelf.context.mover, 32, 32, 32);
     else
-      setColorRGB(shelf.data, i, 0, 0, 0);
+      shelf.SetPixelRGB(i, 0, 0, 0);
   }
   if (shelf.context.mover == (NUM_RGB - 1))
   {
@@ -134,23 +134,6 @@ void loopMover(Shelf &shelf)
   shelf.renderer(shelf);
 }
 
-void loopXmas(Shelf &shelf)
-{
-  unsigned int i;
-
-  for(i = 0; i < shelf.numLeds; i++)
-  {
-    if (shelf.context.color == 1)
-      setColorRGB(shelf.data, i, 255, 0, 0);
-    else
-      setColorRGB(shelf.data, i, 0, 255, 0);
-  }
-  if ((shelf.context.j++ % 100) == 0) {
-    shelf.context.color = 1 - shelf.context.color;
-    shelf.renderer(shelf);
-  }
-}
-
 void loopFadeInOut(Shelf &shelf)
 {
   unsigned int i;
@@ -159,11 +142,11 @@ void loopFadeInOut(Shelf &shelf)
   {
     if (shelf.context.color == 1)
     {
-      setColorRGB(shelf.data, i, shelf.context.j, 0, 0);
+      shelf.SetPixelRGB(i, shelf.context.j, 0, 0);
     }
     else
     {
-      setColorRGB(shelf.data, i, 0, shelf.context.j, 0);
+      shelf.SetPixelRGB(i, 0, shelf.context.j, 0);
     }
   }
   
@@ -179,18 +162,6 @@ void loopFadeInOut(Shelf &shelf)
   shelf.renderer(shelf);
 }
 
-
-void setColorRGB(uint8_t *data, uint16_t idx, uint8_t r, uint8_t g, uint8_t b) 
-{
-  if(idx < NUM_RGB) 
-  {
-    uint8_t *p = &data[idx*3]; 
-    *p++ = g;  
-    *p++ = r;
-    *p = b;
-  }
-}
-
 // the loop function runs over and over again forever
 void loop() {
   byte buf[32];
@@ -203,7 +174,7 @@ void loop() {
     buf[0]++;
     softSer.write(buf, num);
   }
-  return;
+
     for (int i = 0; i < (int)8/*NUM_SHELVES*/; i++) {
         shelves[i].program(shelves[i]);
     }

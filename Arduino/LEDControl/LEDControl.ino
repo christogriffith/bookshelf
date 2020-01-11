@@ -267,11 +267,11 @@ void loop()
   
   ReadAndParseMsg();
   
-#if 0
+#if 1
     for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);
     }
-
+#else
     WholeShelfChase();
     delay(75);
 

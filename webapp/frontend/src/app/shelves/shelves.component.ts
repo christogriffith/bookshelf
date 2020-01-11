@@ -10,11 +10,6 @@ import { SHELVES } from '../def-shelves'
 })
 export class ShelvesComponent implements OnInit {
 
-  shelf: Shelf = {
-    id: 1,
-    name: "Left0"
-  };
-
   constructor() { }
 
   ngOnInit() {

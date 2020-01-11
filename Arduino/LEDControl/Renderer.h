@@ -68,6 +68,32 @@ struct Shelf
             this->SetPixelRGB(i, r, g, b);
         }
     }
+
+    void SetRangeOneColor(uint_fast8_t r, uint_fast8_t g, uint_fast8_t b, uint_fast8_t start, uint_fast8_t end, bool othersOff=false)
+    {
+        if (start > end)
+            return;
+
+        if (end > numLeds)
+            return;
+            
+        unsigned int i;
+        // LEDs < start, if set
+        if (othersOff) {
+            for (i = 0; i < start; i++) {
+                this->SetPixelRGB(i, 0, 0, 0);
+            }
+        }
+        // start to end
+        for (i = start; i <= end; i++) {
+            this->SetPixelRGB(i, r, g, b);
+        }
+        if (othersOff) {
+            for (i = end; i < numLeds; i++) {
+                this->SetPixelRGB(i, 0, 0, 0);
+            }
+        }
+    }
 };
 
 #define RENDER_FUNC_NAME(SHELFNAME) Render##SHELFNAME

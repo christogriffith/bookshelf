@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 #include "Renderer.h"
 #include "SoftwareSerial.h"
 
@@ -65,8 +67,8 @@ void setup() {
   pinMode(1, OUTPUT);           // UART tx
 
   // Set up our serial ports
-  Serial.begin(9600);
-  softSer.begin(9600);
+  Serial.begin(115200);
+  softSer.begin(115200);
 
   // Seeding the RNG is unecessary in our case but doesn't hurt
   randomSeed(analogRead(0));
@@ -84,6 +86,7 @@ void setup() {
   }
 
   Serial.println("Setup complete.");
+  softSer.println("Software serial port up.");
   delay(500);
 }
 
@@ -167,25 +170,77 @@ void WholeShelfChase()
         chaseIndex = 0;
 }
 
-// the loop function runs over and over again forever
-void loop() {
-  
-  byte buf[32];
-  int num;
-  if (softSer.available() > 0)
-  {
-    if ((num = softSer.readBytes(buf, 32)) > 0)
-    {
-      Serial.println("SoftSerial received: ");
-      Serial.write(buf, num);
-    }
+uint8_t chksum(uint8_t *buf, size_t len)
+{
+  uint8_t chk = 0;
+  uint8_t *idx = buf;
+  while (idx < (buf + len)) {
+    chk += *(idx++);
   }
-  
-#if 1
+  return chk;
+}
+
+// the loop function runs over and over again forever
+void loop()
+{  
+  byte buf[256];
+  int num;
+  int bytesRead = 0;
+  StaticJsonDocument<256> msg;
+  int avail = softSer.available();
+  while (avail > 0) {
+    if ((num = softSer.readBytes(&buf[bytesRead], avail)) > 0) {
+      bytesRead += num;
+    }
+    avail = softSer.available();
+  }
+  if (bytesRead > 0) {
+    Serial.print("Read ");
+    Serial.print(bytesRead);
+    Serial.println(" bytes.");
+
+    uint8_t readChk = buf[bytesRead - 1];
+    uint8_t calcChk = chksum(buf, bytesRead - 1);
+    if (readChk != calcChk) {
+      Serial.print("Checksum failed, read: ");
+      Serial.print(readChk);
+      Serial.print(", calc:");
+      Serial.println(calcChk);
+    } else {
+      Serial.println("Checksum OK");
+      DeserializationError error = deserializeMsgPack(msg, buf);
+      // Test if parsing succeeded.
+      if (error) {
+        Serial.print("deserializeMsgPack() failed: ");
+        Serial.println(error.c_str());
+      } else {
+        Serial.print("cmd:");
+        const char *cs=msg["cmd"];
+        Serial.println(cs);
+      
+        if (strcmp(cs, "onecolor") == 0) {
+          int shelf = msg["shelf"];
+          int start = msg["start"];
+          int end = msg["end"];
+          int r = msg["color"]["r"];
+          int g = msg["color"]["g"];
+          int b = msg["color"]["b"];
+          char dbg[128];
+          snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)\r\n",
+            shelf, start, end, r, g, b);
+          Serial.println(dbg);
+          delay(200);
+          shelves[shelf].SetRangeOneColor(r, g, b, start, end, true);
+          shelves[shelf].renderer(shelves[shelf]);
+        }
+      }
+    }
+  }  
+#if 0
     for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);
     }
-#else
+
     WholeShelfChase();
     delay(75);
 

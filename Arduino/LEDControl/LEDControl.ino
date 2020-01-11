@@ -1,11 +1,6 @@
 #include "Renderer.h"
 #include "SoftwareSerial.h"
 
-#define MAX_LEDS      (60)          // Maximum number of LEDs per shelf; used to allocate memory
-#define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
-#define NUM_BYTES     (NUM_RGB*3)   // Number of LEDs (3 per each WS281X)
-#define NUM_BITS      (8)           // Constant value: bits per byte
-
 // Just for convenience when configuring digital outputs
 const uint8_t digitalOutPins[] = 
 {
@@ -29,21 +24,19 @@ RENDER_FUNC(RIGHT_2,    PORTB, PORTB1);
 RENDER_FUNC(RIGHT_3,    PORTB, PORTB2);
 RENDER_FUNC(RIGHT_4,    PORTB, PORTB3);
 
-uint8_t colorData[NUM_SHELVES][MAX_LEDS];
-
 Shelf shelves[] = 
 {   
-    //Shelf  #LEDs Rendering func name        Prog  Context                  Data pointer
-    { LEFT_1,   NUM_RGB, RENDER_FUNC_NAME(LEFT_1),  NULL, {0, 0, 0, 0, 1, false},  colorData[LEFT_1]  },
-    { LEFT_2,   NUM_RGB, RENDER_FUNC_NAME(LEFT_2),  NULL, {0, 0, 0, 0, 0, false},  colorData[LEFT_2]  },
-    { LEFT_3,   NUM_RGB, RENDER_FUNC_NAME(LEFT_3),  NULL, {0, 0, 0, 0, 1, false},  colorData[LEFT_3]  },
-    { LEFT_4,   NUM_RGB, RENDER_FUNC_NAME(LEFT_4),  NULL, {0, 0, 0, 0, 0, false},  colorData[LEFT_4]  },
-    { RIGHT_1,  NUM_RGB, RENDER_FUNC_NAME(RIGHT_1), NULL, {0, 0, 0, 0, 0, false},  colorData[RIGHT_1] },
-    { RIGHT_2,  NUM_RGB, RENDER_FUNC_NAME(RIGHT_2), NULL, {0, 0, 0, 0, 1, false},  colorData[RIGHT_2] },
-    { RIGHT_3,  NUM_RGB, RENDER_FUNC_NAME(RIGHT_3), NULL, {0, 0, 0, 0, 0, false},  colorData[RIGHT_3] },
-    { RIGHT_4,  NUM_RGB, RENDER_FUNC_NAME(RIGHT_4), NULL, {0, 0, 0, 0, 1, false},  colorData[RIGHT_4] },
-    { CENT_LEFT, NUM_RGB, RENDER_FUNC_NAME(CENT_LEFT), NULL, {0, 0, 0, 0, 0, false},  colorData[CENT_LEFT] },
-    { CENT_RIGHT, NUM_RGB, RENDER_FUNC_NAME(CENT_RIGHT), NULL, {0, 0, 0, 0, 1, false},  colorData[CENT_RIGHT] },
+    //Shelf       #LEDs    Rendering func name           Prog  Context
+    { LEFT_1,     NUM_RGB, RENDER_FUNC_NAME(LEFT_1),     NULL, {0, 0, 0, 0, 1, false} },
+    { LEFT_2,     NUM_RGB, RENDER_FUNC_NAME(LEFT_2),     NULL, {0, 0, 0, 0, 0, false} },
+    { LEFT_3,     NUM_RGB, RENDER_FUNC_NAME(LEFT_3),     NULL, {0, 0, 0, 0, 1, false} },
+    { LEFT_4,     NUM_RGB, RENDER_FUNC_NAME(LEFT_4),     NULL, {0, 0, 0, 0, 0, false} },
+    { RIGHT_1,    NUM_RGB, RENDER_FUNC_NAME(RIGHT_1),    NULL, {0, 0, 0, 0, 0, false} },
+    { RIGHT_2,    NUM_RGB, RENDER_FUNC_NAME(RIGHT_2),    NULL, {0, 0, 0, 0, 1, false} },
+    { RIGHT_3,    NUM_RGB, RENDER_FUNC_NAME(RIGHT_3),    NULL, {0, 0, 0, 0, 0, false} },
+    { RIGHT_4,    NUM_RGB, RENDER_FUNC_NAME(RIGHT_4),    NULL, {0, 0, 0, 0, 1, false} },
+    { CENT_LEFT,  NUM_RGB, RENDER_FUNC_NAME(CENT_LEFT),  NULL, {0, 0, 0, 0, 0, false} },
+    { CENT_RIGHT, NUM_RGB, RENDER_FUNC_NAME(CENT_RIGHT), NULL, {0, 0, 0, 0, 1, false} },
 };
 
 enum mode
@@ -64,37 +57,34 @@ SoftwareSerial softSer(A5, A4); // (Rx, Tx)
 
 // the setup function runs once when you press reset or power the board
 void setup() {
-  pinMode(A5, INPUT);
-  pinMode(A4, OUTPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(0, INPUT);
-  pinMode(1, OUTPUT);
+  // Configure the non-shelf-related pins
+  pinMode(A5, INPUT);           // Soft serial rx
+  pinMode(A4, OUTPUT);          // Soft serial tx
+  pinMode(LED_BUILTIN, OUTPUT); // Built-in LED
+  pinMode(0, INPUT);            // UART rx
+  pinMode(1, OUTPUT);           // UART tx
+
+  // Set up our serial ports
   Serial.begin(9600);
-  Serial.println("Setting up...");
-    softSer.begin(9600);
+  softSer.begin(9600);
+
+  // Seeding the RNG is unecessary in our case but doesn't hurt
   randomSeed(analogRead(0));
-   
+
+  // Set all shelf output pins to output, low
   for (int i = 0; i < NUM_DIGITAL_OUT_PINS; i++) {
     pinMode(digitalOutPins[i], OUTPUT);
     digitalWrite(digitalOutPins[i], LOW);
   }
-  
-  shelves[LEFT_1].program = loopFadeInOut;
-  shelves[LEFT_2].program = loopFadeInOut;
-  shelves[LEFT_3].program = loopFadeInOut;
-  shelves[LEFT_4].program = loopFadeInOut;
-  shelves[CENT_LEFT].program = loopFadeInOut;
-  shelves[RIGHT_1].program = loopFadeInOut;
-  shelves[RIGHT_2].program = loopFadeInOut;
-  shelves[RIGHT_3].program = loopFadeInOut;
-  shelves[RIGHT_4].program = loopFadeInOut;
-  shelves[CENT_RIGHT].program = loopFadeInOut;
 
+  // Default to basic white
   for (int i = 0; i < (int)NUM_SHELVES; i++) {
-        shelves[i].context.needsUpdate = true;
-    }
+      shelves[i].program = loopFullWhite;
+      shelves[i].context.needsUpdate = true;
+  }
 
   Serial.println("Setup complete.");
+  delay(500);
 }
 
 void loopFullWhite(Shelf &shelf)
@@ -103,10 +93,10 @@ void loopFullWhite(Shelf &shelf)
   {
     for(unsigned int i=0; i<shelf.numLeds; i++)
     {
-        shelf.SetPixelRGB(i, 64, 64, 64);
+        shelf.SetPixelRGB(i, 250, 107, 50);
     }
     shelf.renderer(shelf);
-    shelf.context.needsUpdate = false;
+    //shelf.context.needsUpdate = false;
   }
 }
 
@@ -136,34 +126,50 @@ void loopMover(Shelf &shelf)
 
 void loopFadeInOut(Shelf &shelf)
 {
-  unsigned int i;
-
-  for(i = 0; i < shelf.numLeds; i++)
-  {
     if (shelf.context.color == 1)
     {
-      shelf.SetPixelRGB(i, shelf.context.j, 0, 0);
+      shelf.SetOneColor(shelf.context.j, 0, 0);
     }
     else
     {
-      shelf.SetPixelRGB(i, 0, shelf.context.j, 0);
+      shelf.SetOneColor(0, shelf.context.j, 0);
     }
-  }
-  
-  shelf.context.j += shelf.context.dir;
-  if (shelf.context.j == 0) {
-    shelf.context.color = 1 - shelf.context.color;
-    shelf.context.dir = 1;
-  }
-  else if (shelf.context.j == 127)
-  {
-    shelf.context.dir = -1;
-  }
-  shelf.renderer(shelf);
+      
+    shelf.context.j += shelf.context.dir;
+    if (shelf.context.j == 0) {
+        shelf.context.color = 1 - shelf.context.color;
+        shelf.context.dir = 1;
+    }
+    else if (shelf.context.j == 127)
+    {
+        shelf.context.dir = -1;
+    }
+    shelf.renderer(shelf);
+}
+
+void WholeShelfChase()
+{
+    static unsigned int chaseIndex = 0;
+    const unsigned int chaseOrder[] = {
+        LEFT_4, LEFT_3, LEFT_2, LEFT_1, CENT_LEFT, CENT_RIGHT, RIGHT_1, RIGHT_2, RIGHT_3, RIGHT_4,
+        RIGHT_3, RIGHT_2, RIGHT_1, CENT_RIGHT, CENT_LEFT, LEFT_1, LEFT_2, LEFT_3 };
+    const unsigned int chaseLen = sizeof(chaseOrder) / sizeof(unsigned int);
+
+    for (int i = 0; i < NUM_SHELVES; i++)
+    {
+        shelves[i].SetOneColor(0, 255, 0);
+        shelves[i].renderer(shelves[i]);
+    }
+    shelves[chaseOrder[chaseIndex]].SetOneColor(255, 0, 0);
+    shelves[chaseOrder[chaseIndex]].renderer(shelves[chaseOrder[chaseIndex]]);
+    
+    if (++chaseIndex == chaseLen)
+        chaseIndex = 0;
 }
 
 // the loop function runs over and over again forever
 void loop() {
+  
   byte buf[32];
   int num;
   if (softSer.available() > 0)
@@ -172,13 +178,17 @@ void loop() {
     {
       Serial.println("SoftSerial received: ");
       Serial.write(buf, num);
-      buf[0]++;
-      softSer.write(buf, num);
     }
   }
-
+  
+#if 1
     for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);
     }
-  //delay(5);
+#else
+    WholeShelfChase();
+    delay(75);
+
+#endif
 }
+ 

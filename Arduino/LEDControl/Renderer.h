@@ -4,6 +4,11 @@
 // Someday I'll stop being lazy and learn the gcc inline assembly biz enough to not need to generate a separate function for each pin.
 // But maybe I won't. If it fits (in memory), I sits.
 
+#define MAX_LEDS      (60)          // Maximum number of LEDs per shelf; used to allocate memory
+#define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
+#define NUM_BYTES     (NUM_RGB*3)   // Number of LEDs (3 per each WS281X)
+#define NUM_BITS      (8)           // Constant value: bits per byte
+
 enum ShelfName
 {
     LEFT_1,
@@ -22,6 +27,11 @@ struct Shelf;
 typedef void (*RenderFunc)(const Shelf &shelf);
 typedef void (*Program)(Shelf &shelf);
 
+// Global data buffer. The Ard doesn't have enough RAM to give each shelf its
+// own buffer, but we can only write one at a time anyway, so it doesn't
+// really matter. This is a global variable.
+uint8_t pixelData[MAX_LEDS];
+
 struct RenderContext
 {
     unsigned int i;
@@ -39,13 +49,12 @@ struct Shelf
     RenderFunc renderer;
     Program program;
     RenderContext context;
-    uint8_t *data;
 
     void SetPixelRGB(uint_fast16_t pix, uint_fast8_t r, uint_fast8_t g, uint_fast8_t b) 
     {
       if (pix < this->numLeds) 
       {
-        uint8_t *p = &this->data[pix*3]; 
+        uint8_t *p = &pixelData[pix*3]; 
         *p++ = g;  
         *p++ = r;
         *p = b;
@@ -66,13 +75,12 @@ struct Shelf
 #define RENDER_FUNC(SHELFNAME, PORT, PORTPIN)   \
 void Render##SHELFNAME(const Shelf &shelf)      \
 {                                               \
-  if(!shelf.data) return;                       \
   static uint8_t t_f;                           \
   while((micros() - t_f) < 50L);                \
                                                 \
   cli();                                        \
   volatile uint8_t                              \
-   *p    = shelf.data,                          \
+   *p    = pixelData,                          \
     val  = *p++,                                \
     high = PORT | _BV(PORTPIN),                 \
     low  = PORT & ~_BV(PORTPIN),                \

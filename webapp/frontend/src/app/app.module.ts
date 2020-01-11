@@ -6,11 +6,13 @@ import { FormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { ShelvesComponent } from './shelves/shelves.component';
+import { ShelfDetailComponent } from './shelf-detail/shelf-detail.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    ShelvesComponent
+    ShelvesComponent,
+    ShelfDetailComponent
   ],
   imports: [
     BrowserModule,

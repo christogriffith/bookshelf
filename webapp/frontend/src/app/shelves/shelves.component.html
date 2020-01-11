@@ -1,7 +1,10 @@
-<h2>{{shelf.name | uppercase}} Details</h2>
-<div><span>id: </span>{{shelf.id}}</div>
-<div>
-  <label>name:
-    <input [(ngModel)]="shelf.name" placeholder="name"/>
-  </label>
-</div>
+<h2>Shelves</h2>
+<ul class="shelves">
+  <li *ngFor="let shelf of shelves" 
+      [class.selected]="shelf === selectedShelf"
+      (click)="onselect(shelf)">
+    <span>{{shelf.id}}</span> {{shelf.name}}
+  </li>
+</ul>
+
+<app-shelf-detail [shelf]="selectedShelf"></app-shelf-detail>

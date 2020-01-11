@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Shelf } from '../shelf';
 
-import SHELVES from '../def-shelves.'
+import { SHELVES } from '../def-shelves'
 
 @Component({
   selector: 'app-shelves',
@@ -19,7 +19,14 @@ export class ShelvesComponent implements OnInit {
 
   ngOnInit() {
   }
+
+  /* TODO: should probably capitalize the shelf type */
+  selectedShelf: Shelf;
+  onselect(shelf: Shelf): void {
+    this.selectedShelf = shelf;
+  }
   
   shelves = SHELVES;
 
 }
+

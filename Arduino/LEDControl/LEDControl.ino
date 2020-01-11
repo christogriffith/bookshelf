@@ -3,6 +3,8 @@
 #include "Renderer.h"
 #include "SoftwareSerial.h"
 
+#undef PRINT_DBG_HEARTBEAT
+
 // Just for convenience when configuring digital outputs
 const uint8_t digitalOutPins[] = 
 {
@@ -88,6 +90,18 @@ void setup() {
   Serial.println("Setup complete.");
   softSer.println("Software serial port up.");
   delay(500);
+}
+
+void PrintDebugHeartbeat()
+{
+#ifdef PRINT_DBG_HEARTBEAT
+  static unsigned int lastTime = millis();
+
+  if (millis() > (lastTime + 1000)) {
+    Serial.println(".");
+    lastTime = millis();
+  }
+#endif
 }
 
 void loopFullWhite(Shelf &shelf)
@@ -249,12 +263,7 @@ void ReadAndParseMsg()
 // the loop function runs over and over again forever
 void loop()
 {
-  static unsigned int lastTime = millis();
-
-  if (millis() > (lastTime + 1000)) {
-    Serial.println(".");
-    lastTime = millis();
-  }
+  
   
   ReadAndParseMsg();
   

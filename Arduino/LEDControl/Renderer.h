@@ -3,7 +3,6 @@
 //
 // Someday I'll stop being lazy and learn the gcc inline assembly biz enough to not need to generate a separate function for each pin.
 // But maybe I won't. If it fits (in memory), I sits.
-
 #define MAX_LEDS      (60)          // Maximum number of LEDs per shelf; used to allocate memory
 #define NUM_RGB       (55)           // Number of actual LEDs we have connected (or that we want active)
 #define NUM_BYTES     (NUM_RGB*3)   // Number of LEDs (3 per each WS281X)
@@ -30,7 +29,7 @@ typedef void (*Program)(Shelf &shelf);
 // Global data buffer. The Ard doesn't have enough RAM to give each shelf its
 // own buffer, but we can only write one at a time anyway, so it doesn't
 // really matter. This is a global variable.
-uint8_t pixelData[MAX_LEDS];
+uint8_t pixelData[MAX_LEDS * 3];
 
 struct RenderContext
 {
@@ -75,7 +74,7 @@ struct Shelf
             return;
 
         if (end > numLeds)
-            return;
+            end = numLeds;
             
         unsigned int i;
         // LEDs < start, if set
@@ -85,9 +84,10 @@ struct Shelf
             }
         }
         // start to end
-        for (i = start; i <= end; i++) {
+        for (i = start; i < end; i++) {
             this->SetPixelRGB(i, r, g, b);
         }
+        
         if (othersOff) {
             for (i = end; i < numLeds; i++) {
                 this->SetPixelRGB(i, 0, 0, 0);

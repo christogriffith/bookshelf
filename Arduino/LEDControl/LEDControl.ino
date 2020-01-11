@@ -68,7 +68,7 @@ void setup() {
 
   // Set up our serial ports
   Serial.begin(115200);
-  softSer.begin(115200);
+  softSer.begin(57600);
 
   // Seeding the RNG is unecessary in our case but doesn't hurt
   randomSeed(analogRead(0));
@@ -180,9 +180,8 @@ uint8_t chksum(uint8_t *buf, size_t len)
   return chk;
 }
 
-// the loop function runs over and over again forever
-void loop()
-{  
+void ReadAndParseMsg()
+{
   byte buf[256];
   int num;
   int bytesRead = 0;
@@ -218,24 +217,47 @@ void loop()
         const char *cs=msg["cmd"];
         Serial.println(cs);
       
-        if (strcmp(cs, "onecolor") == 0) {
+        if (strcmp(cs, "ranges") == 0) {
           int shelf = msg["shelf"];
-          int start = msg["start"];
-          int end = msg["end"];
-          int r = msg["color"]["r"];
-          int g = msg["color"]["g"];
-          int b = msg["color"]["b"];
-          char dbg[128];
-          snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)\r\n",
-            shelf, start, end, r, g, b);
-          Serial.println(dbg);
-          delay(200);
-          shelves[shelf].SetRangeOneColor(r, g, b, start, end, true);
+
+          JsonArray leds = msg["leds"].as<JsonArray>();
+
+          for (JsonVariant l : leds) {
+            int start = l["s"].as<int>();
+            int end = l["e"].as<int>();
+            int r = l["c"]["r"].as<int>();
+            int g = l["c"]["g"].as<int>();
+            int b = l["c"]["b"].as<int>();
+            shelves[shelf].SetRangeOneColor(r, g, b, start, end, false);
+            
+            /*char dbg[128];
+            snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)",
+              shelf, start, end, r, g, b);
+            Serial.println(dbg);
+            delay(100);
+            */
+          }
+          Serial.println("Rendering");
           shelves[shelf].renderer(shelves[shelf]);
+          Serial.println("Complete");
         }
       }
     }
-  }  
+  }
+}
+
+// the loop function runs over and over again forever
+void loop()
+{
+  static unsigned int lastTime = millis();
+
+  if (millis() > (lastTime + 1000)) {
+    Serial.println(".");
+    lastTime = millis();
+  }
+  
+  ReadAndParseMsg();
+  
 #if 0
     for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);

@@ -34,7 +34,7 @@ bookshelf = [
 class Bookshelf(Resource):
 
     def get(self, halfid=None):
-        return { 'halves': [{'id':0, 'on': bookshelf[0].state}, {'id':1, 'on': bookshelf[1].state}]}
+        return { 's': [{'id':0, 'on': bookshelf[0].state}, {'id':1, 'on': bookshelf[1].state}]}
 
     def put(self, halfid):
         d = int(request.form['on'])

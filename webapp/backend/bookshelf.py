@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 from flask import Flask, request
 from flask_restful import Resource, Api
+from flask_cors import CORS
 
 from power import Bookshelf
 
 app = Flask(__name__)
 api = Api(app)
+CORS(app)
 
 api.add_resource(Bookshelf, '/', '/<int:halfid>')
 

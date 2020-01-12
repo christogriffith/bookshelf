@@ -9,13 +9,15 @@ import { AppComponent } from './app.component';
 import { ShelvesComponent } from './shelves/shelves.component';
 import { ShelfDetailComponent } from './shelf-detail/shelf-detail.component';
 import { BookshelfComponent } from './bookshelf/bookshelf.component';
+import { LedGroupOnecolorComponent } from './led-group-onecolor/led-group-onecolor.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ShelvesComponent,
     ShelfDetailComponent,
-    BookshelfComponent
+    BookshelfComponent,
+    LedGroupOnecolorComponent
   ],
   imports: [
     BrowserModule,

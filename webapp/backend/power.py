@@ -9,12 +9,12 @@ class ShelfHalf:
         self.pinnum = pin
         self.off()
         self.state = False
-        
+
     def on(self):
         print("Setting pin %d to on" % (self.pinnum))
         self.pin.on()
         self.state = True
-    
+
     def off(self):
         print("Setting pin %d to off" % (self.pinnum))
         self.pin.off()
@@ -37,8 +37,10 @@ class Bookshelf(Resource):
         return { 's': [{'id':0, 'on': bookshelf[0].state}, {'id':1, 'on': bookshelf[1].state}]}
 
     def put(self, halfid):
-        d = int(request.form['on'])
+        jsonobj = request.get_json()
+        d = int(jsonobj['on'])
         if d > 1:
             return None, 404
+
         bookshelf[halfid].setstate(d)
-        return {'id':halfid, 'on': bookshelf[halfid].state}, 200
+        return { 's': [{'id':0, 'on': bookshelf[0].state}, {'id':1, 'on': bookshelf[1].state}]}, 200

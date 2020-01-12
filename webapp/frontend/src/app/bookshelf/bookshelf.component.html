@@ -1,6 +1,6 @@
 <h2>The Bookshelf</h2>
 <ul class="bookshelf">
-  <li *ngFor="let bookshelf of bookshelves.s">
+  <li *ngFor="let bookshelf of bookshelves?.s">
     <span>{{bookshelf.id}}</span> {{bookshelf.on}}
     <button (click)="onClickMe(bookshelf, 1)">On</button>
     <button (click)="onClickMe(bookshelf, 0)">Off</button>

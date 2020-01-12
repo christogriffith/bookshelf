@@ -2,13 +2,14 @@
 
 import msgpack
 import serial
+import time
 
 ARD_PORT = "/dev/ttyAMA0"
 ARD_BAUD = 57600
 
 data = {
     "cmd": "ranges",
-    "shelf": 3,
+    "shelf": 1,
     "leds":
     [
         { "s": 0, "e": 20, "c": { "r": 0, "g": 0, "b": 255 } },
@@ -19,18 +20,25 @@ data = {
 
 wholeshelfonecolor = {
     "cmd":"entire",
-    "color":{ "r": 255, "g": 0, "b": 0 }
+    "c":{ "r": 127, "g": 127, "b": 127 }
 }
 
-serport = serial.Serial(ARD_PORT, ARD_BAUD)
+serport = serial.Serial(ARD_PORT, ARD_BAUD, timeout=2)
 serport.isOpen()
 
-jstr = msgpack.dumps(data)
+jstr = msgpack.dumps(wholeshelfonecolor)
 chksum = sum(bytearray(jstr)) % 256
 jstr = jstr + bytes([chksum])
 msglen = len(jstr)
-jstr = bytes([msglen%256]) + jstr
-print("Writing %d bytes" % (len(jstr)))
-print(jstr)
-serport.write(jstr)
+resp = ""
+while not resp.startswith('ACK'):
+    serport.write(bytes([msglen%256]))
+    time.sleep(0.25)
+    print("Writing %d bytes" % (len(jstr)))
+    print(jstr)
+    serport.write(jstr)
+    resp = serport.readline().decode()
+    print("Received %s" % resp)
+    time.sleep(1)
 
+print("Leaving")

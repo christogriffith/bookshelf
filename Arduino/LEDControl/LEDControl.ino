@@ -216,16 +216,27 @@ void ParseCmd(StaticJsonDocument<256> &msg)
       int b = l["c"]["b"].as<int>();
       shelves[shelf].SetRangeOneColor(r, g, b, start, end, false);
       
-      /*char dbg[128];
+      char dbg[128];
       snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)",
         shelf, start, end, r, g, b);
       Serial.println(dbg);
       delay(100);
-      */
     }
     Serial.println("Rendering");
     shelves[shelf].renderer(shelves[shelf]);
     Serial.println("Complete");
+  } else if (strcmp(cs, "entire") == 0) {
+    int r = msg["c"]["r"].as<int>();
+    int g = msg["c"]["g"].as<int>();
+    int b = msg["c"]["b"].as<int>();
+    char dbg[128];
+    snprintf(dbg, 128, "col(%u,%u,%u)", r, g, b);
+    Serial.println(dbg);
+    delay(100);
+    for (int i = 0;i < NUM_SHELVES; i++) {
+      shelves[i].SetOneColor(r, g, b);
+      shelves[i].renderer(shelves[i]);
+    }
   }
 }
 
@@ -253,7 +264,7 @@ void ReadAndParseMsg()
       Serial.println("Error reading message length.");
     } else {
       msgLen = buf[0];
-      //Serial.print("L: "); Serial.println(msgLen);
+      Serial.print("L: "); Serial.println(msgLen);
     }
     startMs = millis();
     while (bytesRead < msgLen) {
@@ -263,6 +274,7 @@ void ReadAndParseMsg()
       if ((millis() - startMs) > 1000) {
         Serial.println("Soft serial timeout");
         DrainSerialBuffer();
+        softSer.println("NAK");
         return;
       }
     }
@@ -278,8 +290,10 @@ void ReadAndParseMsg()
         Serial.print(readChk);
         Serial.print(", calc:");
         Serial.println(calcChk);
+        softSer.println("NAK");
       } else {
         Serial.println("Checksum OK");
+        softSer.println("ACK");
         DeserializationError error = deserializeMsgPack(msg, buf);
         // Test if parsing succeeded.
         if (error) {
@@ -300,11 +314,12 @@ void loop()
   
   ReadAndParseMsg();
   
-#if 1
+  // This loop really screws up SoftwareSerial. Interrupts?
+#if 0
     for (int i = 0; i < (int)NUM_SHELVES; i++) {
         shelves[i].program(shelves[i]);
     }
-#else
+//#else
     WholeShelfChase();
     delay(75);
 

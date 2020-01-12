@@ -52,6 +52,8 @@ enum mode
   NUM_FUNCS
 };
 
+void DrainSerialBuffer();
+
 // On the serial cable, the 5V transmit line (A4 on the Arduino side) is at 5V;
 // there is a 4.1K/2.2K divider under the shrink tube to put us in the 3.2V area.
 // Arduino            RPi header    Notes
@@ -89,6 +91,7 @@ void setup() {
 
   Serial.println("Setup complete.");
   softSer.println("Software serial port up.");
+  DrainSerialBuffer();
   delay(500);
 }
 
@@ -194,66 +197,96 @@ uint8_t chksum(uint8_t *buf, size_t len)
   return chk;
 }
 
+void ParseCmd(StaticJsonDocument<256> &msg)
+{
+  Serial.print("cmd:");
+  const char *cs=msg["cmd"];
+  Serial.println(cs);
+
+  if (strcmp(cs, "ranges") == 0) {
+    int shelf = msg["shelf"];
+
+    JsonArray leds = msg["leds"].as<JsonArray>();
+
+    for (JsonVariant l : leds) {
+      int start = l["s"].as<int>();
+      int end = l["e"].as<int>();
+      int r = l["c"]["r"].as<int>();
+      int g = l["c"]["g"].as<int>();
+      int b = l["c"]["b"].as<int>();
+      shelves[shelf].SetRangeOneColor(r, g, b, start, end, false);
+      
+      /*char dbg[128];
+      snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)",
+        shelf, start, end, r, g, b);
+      Serial.println(dbg);
+      delay(100);
+      */
+    }
+    Serial.println("Rendering");
+    shelves[shelf].renderer(shelves[shelf]);
+    Serial.println("Complete");
+  }
+}
+
+void DrainSerialBuffer()
+{
+  int avail;
+  uint8_t buf[16];
+  while ((avail = softSer.available()) > 0) {
+    softSer.readBytes(buf, 16);
+  }
+}
+
 void ReadAndParseMsg()
 {
   byte buf[256];
   int num;
   int bytesRead = 0;
+  uint8_t msgLen = 0;
+  uint32_t startMs = 0;
   StaticJsonDocument<256> msg;
-  int avail = softSer.available();
-  while (avail > 0) {
-    if ((num = softSer.readBytes(&buf[bytesRead], avail)) > 0) {
-      bytesRead += num;
-    }
-    avail = softSer.available();
-  }
-  if (bytesRead > 0) {
-    Serial.print("Read ");
-    Serial.print(bytesRead);
-    Serial.println(" bytes.");
-
-    uint8_t readChk = buf[bytesRead - 1];
-    uint8_t calcChk = chksum(buf, bytesRead - 1);
-    if (readChk != calcChk) {
-      Serial.print("Checksum failed, read: ");
-      Serial.print(readChk);
-      Serial.print(", calc:");
-      Serial.println(calcChk);
+  // Get message length
+  if (softSer.available() > 0) {
+    num = softSer.readBytes(buf, 1);
+    if (num != 1) {
+      Serial.println("Error reading message length.");
     } else {
-      Serial.println("Checksum OK");
-      DeserializationError error = deserializeMsgPack(msg, buf);
-      // Test if parsing succeeded.
-      if (error) {
-        Serial.print("deserializeMsgPack() failed: ");
-        Serial.println(error.c_str());
+      msgLen = buf[0];
+      //Serial.print("L: "); Serial.println(msgLen);
+    }
+    startMs = millis();
+    while (bytesRead < msgLen) {
+      if ((num = softSer.readBytes(&buf[bytesRead], softSer.available())) > 0) {
+        bytesRead += num;
+      }
+      if ((millis() - startMs) > 1000) {
+        Serial.println("Soft serial timeout");
+        DrainSerialBuffer();
+        return;
+      }
+    }
+    if (bytesRead > 0) {
+      Serial.print("Read ");
+      Serial.print(bytesRead);
+      Serial.println(" bytes.");
+  
+      uint8_t readChk = buf[bytesRead - 1];
+      uint8_t calcChk = chksum(buf, bytesRead - 1);
+      if (readChk != calcChk) {
+        Serial.print("Checksum failed, read: ");
+        Serial.print(readChk);
+        Serial.print(", calc:");
+        Serial.println(calcChk);
       } else {
-        Serial.print("cmd:");
-        const char *cs=msg["cmd"];
-        Serial.println(cs);
-      
-        if (strcmp(cs, "ranges") == 0) {
-          int shelf = msg["shelf"];
-
-          JsonArray leds = msg["leds"].as<JsonArray>();
-
-          for (JsonVariant l : leds) {
-            int start = l["s"].as<int>();
-            int end = l["e"].as<int>();
-            int r = l["c"]["r"].as<int>();
-            int g = l["c"]["g"].as<int>();
-            int b = l["c"]["b"].as<int>();
-            shelves[shelf].SetRangeOneColor(r, g, b, start, end, false);
-            
-            /*char dbg[128];
-            snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)",
-              shelf, start, end, r, g, b);
-            Serial.println(dbg);
-            delay(100);
-            */
-          }
-          Serial.println("Rendering");
-          shelves[shelf].renderer(shelves[shelf]);
-          Serial.println("Complete");
+        Serial.println("Checksum OK");
+        DeserializationError error = deserializeMsgPack(msg, buf);
+        // Test if parsing succeeded.
+        if (error) {
+          Serial.print("deserializeMsgPack() failed: ");
+          Serial.println(error.c_str());
+        } else {
+          ParseCmd(msg);
         }
       }
     }
@@ -263,7 +296,7 @@ void ReadAndParseMsg()
 // the loop function runs over and over again forever
 void loop()
 {
-  
+  PrintDebugHeartbeat();
   
   ReadAndParseMsg();
   

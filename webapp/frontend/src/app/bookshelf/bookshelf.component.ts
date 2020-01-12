@@ -22,10 +22,9 @@ export class BookshelfComponent implements OnInit {
  
   onClickMe(shelf: Bookshelf, on:number) {
     shelf.on = (on === 1);
-    this.message = "you clicked me";
-    this.bookshelfService.updateBookshelf(shelf);
+    this.bookshelfService.updateBookshelf(shelf).
+      subscribe(bookshelf => this.bookshelves = bookshelf);
   }
 
   bookshelves: Bookshelf[];
-  message : string;
 }

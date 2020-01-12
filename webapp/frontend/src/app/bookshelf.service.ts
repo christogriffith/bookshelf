@@ -27,11 +27,13 @@ export class BookshelfService {
   }
 
   updateBookshelf (bookshelf: Bookshelf): Observable<any> {
+    
     const url = `${this.bookshelfUrl}/${bookshelf.id}`;
     let param = 0;  
     if (bookshelf.on)
       param = 1;
-    return this.http.put(url, `on=${param}`);
+    let ret = this.http.put(url, bookshelf);
+    return ret;
   }   
 
 

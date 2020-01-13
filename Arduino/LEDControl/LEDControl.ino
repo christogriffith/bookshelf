@@ -225,17 +225,17 @@ void ParseCmd(StaticJsonDocument<256> &msg)
     Serial.println("Rendering");
     shelves[shelf].renderer(shelves[shelf]);
     Serial.println("Complete");
-  } else if (strcmp(cs, "entire") == 0) {
-    int r = msg["c"]["r"].as<int>();
-    int g = msg["c"]["g"].as<int>();
-    int b = msg["c"]["b"].as<int>();
-    char dbg[128];
-    snprintf(dbg, 128, "col(%u,%u,%u)", r, g, b);
-    Serial.println(dbg);
-    delay(100);
+  } else if (strcmp(cs, "entire")) {
+     int r = msg["c"]["r"].as<int>();
+      int g = msg["c"]["g"].as<int>();
+      int b = msg["c"]["b"].as<int>();
     for (int i = 0;i < NUM_SHELVES; i++) {
       shelves[i].SetOneColor(r, g, b);
       shelves[i].renderer(shelves[i]);
+    }
+  } else if (strcmp(cs, "on") == 0) {
+    for (int i = 0; i < (int)NUM_SHELVES; i++) {
+        shelves[i].program(shelves[i]);
     }
   }
 }

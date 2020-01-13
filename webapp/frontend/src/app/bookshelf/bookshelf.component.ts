@@ -17,14 +17,14 @@ export class BookshelfComponent implements OnInit {
 
   getBookshelf() : void {
     this.bookshelfService.getBookshelf().
-      subscribe(bookshelf => this.bookshelves = bookshelf);
+      subscribe(bookshelf => this.bookshelf = bookshelf);
   }
  
-  onClickMe(shelf: Bookshelf, on:number) {
-    shelf.on = (on === 1);
+  onClickMe(shelf: Bookshelf, on:string) {
+    shelf.power = on;
     this.bookshelfService.updateBookshelf(shelf).
-      subscribe(bookshelf => this.bookshelves = bookshelf);
+      subscribe(bookshelf => this.bookshelf = bookshelf);
   }
 
-  bookshelves: Bookshelf[];
+  bookshelf: Bookshelf;
 }

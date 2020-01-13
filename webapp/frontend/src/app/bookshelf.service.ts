@@ -16,15 +16,15 @@ export class BookshelfService {
   constructor(
     private http: HttpClient) { }
 
-  getBookshelf(): Observable<Bookshelf[]> {
-    return this.http.get<Bookshelf[]>(this.bookshelfUrl);
+  getBookshelf(): Observable<Bookshelf> {
+    return this.http.get<Bookshelf>(this.bookshelfUrl);
   }
 
   updateBookshelf (bookshelf: Bookshelf): Observable<any> {
     
-    const url = `${this.bookshelfUrl}/${bookshelf.id}`;
+    const url = `${this.bookshelfUrl}`;
     let param = 0;  
-    if (bookshelf.on)
+    if (bookshelf.power == "on")
       param = 1;
     let ret = this.http.put(url, bookshelf);
     return ret;

@@ -2,6 +2,8 @@ from gpiozero import DigitalOutputDevice
 from flask import request
 from flask_restful import reqparse, abort, Api, Resource
 
+from ArdunoIF import *
+
 class ShelfHalf:
     def __init__(self, halfid, pin):
         self.halfid = halfid
@@ -74,6 +76,7 @@ class Bookshelf(Resource):
         if jsonobj['power'] == 'on':
             bookshelf[0].on()
             bookshelf[1].on()
+            SendJsonCommand(wholeshelfonecolor);
             BOOKSHELF['power'] = 'on'
         elif jsonobj['power'] == 'off':
             bookshelf[0].off()

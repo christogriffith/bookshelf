@@ -23,22 +23,24 @@ wholeshelfonecolor = {
     "c":{ "r": 127, "g": 127, "b": 127 }
 }
 
-serport = serial.Serial(ARD_PORT, ARD_BAUD, timeout=2)
-serport.isOpen()
+def SendJsonCommand(jsonCmd):
+    serport = serial.Serial(ARD_PORT, ARD_BAUD, timeout=2)
+    serport.isOpen()
 
-jstr = msgpack.dumps(wholeshelfonecolor)
-chksum = sum(bytearray(jstr)) % 256
-jstr = jstr + bytes([chksum])
-msglen = len(jstr)
-resp = ""
-while not resp.startswith('ACK'):
-    serport.write(bytes([msglen%256]))
-    time.sleep(0.25)
-    print("Writing %d bytes" % (len(jstr)))
-    print(jstr)
-    serport.write(jstr)
-    resp = serport.readline().decode()
-    print("Received %s" % resp)
-    time.sleep(1)
+    jstr = msgpack.dumps(jsonCmd)
+    chksum = sum(bytearray(jstr)) % 256
+    jstr = jstr + bytes([chksum])
+    msglen = len(jstr)
+    resp = ""
+    while not resp.startswith('ACK'):
+        serport.write(bytes([msglen%256]))
+        time.sleep(0.25)
+        print("Writing %d bytes" % (len(jstr)))
+        print(jstr)
+        serport.write(jstr)
+        resp = serport.readline().decode()
+        print("Received %s" % resp)
+        time.sleep(1)
 
-print("Leaving")
+    serport.close()
+    print("Leaving")

@@ -4,3 +4,13 @@
   <button (click)="onClickMe(bookshelf, 'on')">On</button>
   <button (click)="onClickMe(bookshelf, 'off')">Off</button>
 </div>
+<div>
+  <span>Command: {{bookshelf?.cmd}}</span>
+
+  <span [style.background]="selectedColor"
+      [cpToggle]="true"
+      [cpDialogDisplay]="'inline'"
+      [cpCancelButton]="true"
+      [(colorPicker)]="selectedColor"
+      (colorPickerChange)="onColorChange(bookshelf, selectedColor)"></span>
+</div>

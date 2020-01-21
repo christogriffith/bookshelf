@@ -26,5 +26,17 @@ export class BookshelfComponent implements OnInit {
       subscribe(bookshelf => this.bookshelf = bookshelf);
   }
 
+  onColorChange(shelf: Bookshelf, color: string)
+  {
+    console.log("changed color to" + color);
+    shelf.cmd="entire";
+    var Color = require('color');
+    var col = Color(color);
+    shelf.color = col.object();
+    console.log(shelf);
+    this.bookshelfService.updateBookshelf(shelf).
+      subscribe(bookshelf => this.bookshelf = bookshelf);
+  }
+
   bookshelf: Bookshelf;
 }

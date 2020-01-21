@@ -11,6 +11,8 @@ import { ShelfDetailComponent } from './shelf-detail/shelf-detail.component';
 import { BookshelfComponent } from './bookshelf/bookshelf.component';
 import { LedGroupOnecolorComponent } from './led-group-onecolor/led-group-onecolor.component';
 
+import { ColorPickerModule } from 'ngx-color-picker';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -23,7 +25,8 @@ import { LedGroupOnecolorComponent } from './led-group-onecolor/led-group-onecol
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    ColorPickerModule
   ],
   providers: [],
   bootstrap: [AppComponent]

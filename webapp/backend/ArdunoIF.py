@@ -20,7 +20,7 @@ data = {
 
 wholeshelfonecolor = {
     "cmd":"entire",
-    "c":{ "r": 127, "g": 127, "b": 127 }
+    "color":{ "r": 127, "g": 127, "b": 127 }
 }
 
 def SendJsonCommand(jsonCmd):
@@ -32,6 +32,7 @@ def SendJsonCommand(jsonCmd):
     jstr = jstr + bytes([chksum])
     msglen = len(jstr)
     resp = ""
+    failcount = 0
     while not resp.startswith('ACK'):
         serport.write(bytes([msglen%256]))
         time.sleep(0.25)
@@ -41,6 +42,10 @@ def SendJsonCommand(jsonCmd):
         resp = serport.readline().decode()
         print("Received %s" % resp)
         time.sleep(1)
+        failcount += 1
+        if failcount == 5:
+            print('Giving up')
+            break
 
     serport.close()
     print("Leaving")

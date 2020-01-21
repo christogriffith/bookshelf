@@ -226,9 +226,9 @@ void ParseCmd(StaticJsonDocument<256> &msg)
     shelves[shelf].renderer(shelves[shelf]);
     Serial.println("Complete");
   } else if (strcmp(cs, "entire") == 0) {
-    int r = msg["c"]["r"].as<int>();
-    int g = msg["c"]["g"].as<int>();
-    int b = msg["c"]["b"].as<int>();
+    int r = msg["color"]["r"].as<int>();
+    int g = msg["color"]["g"].as<int>();
+    int b = msg["color"]["b"].as<int>();
     char dbg[128];
     snprintf(dbg, 128, "col(%u,%u,%u)", r, g, b);
     Serial.println(dbg);
@@ -275,7 +275,7 @@ void ReadAndParseMsg()
       if ((num = softSer.readBytes(&buf[bytesRead], softSer.available())) > 0) {
         bytesRead += num;
       }
-      if ((millis() - startMs) > 1000) {
+      if ((millis() - startMs) > 500) {
         Serial.println("Soft serial timeout");
         DrainSerialBuffer();
         softSer.println("NAK");

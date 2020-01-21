@@ -48,6 +48,8 @@ SHELVES  = {
 
 BOOKSHELF = {
         'power':'off',
+        'cmd': 'invalid',
+        'color': { 'r': 0xFF, 'g': 0xFF, 'b': 0xFF },
         'shelves': [ SHELVES ]
 }
 
@@ -76,8 +78,14 @@ class Bookshelf(Resource):
         if jsonobj['power'] == 'on':
             bookshelf[0].on()
             bookshelf[1].on()
+            newCmd = wholeshelfonecolor
+            newCmd['color']['r'] = jsonobj['color']['r']
+            newCmd['color']['g'] = jsonobj['color']['g']
+            newCmd['color']['b'] = jsonobj['color']['b']
+            #print(wholeshelfonecolor)
             SendJsonCommand(wholeshelfonecolor);
             BOOKSHELF['power'] = 'on'
+            BOOKSHELF['cmd'] = jsonobj['cmd']
         elif jsonobj['power'] == 'off':
             bookshelf[0].off()
             bookshelf[1].off()

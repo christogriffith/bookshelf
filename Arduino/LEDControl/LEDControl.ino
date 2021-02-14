@@ -87,6 +87,8 @@ void setup() {
   for (int i = 0; i < (int)NUM_SHELVES; i++) {
       shelves[i].program = loopFullWhite;
       shelves[i].context.needsUpdate = true;
+
+      shelves[i].program(shelves[i]);
   }
 
   Serial.println("Setup complete.");
@@ -116,75 +118,8 @@ void loopFullWhite(Shelf &shelf)
         shelf.SetPixelRGB(i, 250, 107, 50);
     }
     shelf.renderer(shelf);
-    //shelf.context.needsUpdate = false;
+    shelf.context.needsUpdate = true;
   }
-}
-
-void loopMover(Shelf &shelf)
-{
-  unsigned int i;
-  
-  for(i = 0; i < shelf.numLeds; i++)
-  {
-    if (i == shelf.context.mover)
-      shelf.SetPixelRGB(shelf.context.mover, 32, 32, 32);
-    else
-      shelf.SetPixelRGB(i, 0, 0, 0);
-  }
-  if (shelf.context.mover == (NUM_RGB - 1))
-  {
-    shelf.context.dir = -1;
-  }
-  else if (shelf.context.mover == 0)
-  {
-    shelf.context.dir = 1;
-  }
-    
-  shelf.context.mover = shelf.context.mover + shelf.context.dir;
-  shelf.renderer(shelf);
-}
-
-void loopFadeInOut(Shelf &shelf)
-{
-    if (shelf.context.color == 1)
-    {
-      shelf.SetOneColor(shelf.context.j, 0, 0);
-    }
-    else
-    {
-      shelf.SetOneColor(0, shelf.context.j, 0);
-    }
-      
-    shelf.context.j += shelf.context.dir;
-    if (shelf.context.j == 0) {
-        shelf.context.color = 1 - shelf.context.color;
-        shelf.context.dir = 1;
-    }
-    else if (shelf.context.j == 127)
-    {
-        shelf.context.dir = -1;
-    }
-    shelf.renderer(shelf);
-}
-
-void WholeShelfChase()
-{
-    static unsigned int chaseIndex = 0;
-    const unsigned int chaseOrder[] = {
-        LEFT_4, LEFT_3, LEFT_2, LEFT_1, CENT_LEFT, CENT_RIGHT, RIGHT_1, RIGHT_2, RIGHT_3, RIGHT_4,
-        RIGHT_3, RIGHT_2, RIGHT_1, CENT_RIGHT, CENT_LEFT, LEFT_1, LEFT_2, LEFT_3 };
-    const unsigned int chaseLen = sizeof(chaseOrder) / sizeof(unsigned int);
-
-    for (int i = 0; i < NUM_SHELVES; i++)
-    {
-        shelves[i].SetOneColor(0, 255, 0);
-        shelves[i].renderer(shelves[i]);
-    }
-    shelves[chaseOrder[chaseIndex]].SetOneColor(255, 0, 0);
-    shelves[chaseOrder[chaseIndex]].renderer(shelves[chaseOrder[chaseIndex]]);
-    
-    if (++chaseIndex == chaseLen)
-        chaseIndex = 0;
 }
 
 uint8_t chksum(uint8_t *buf, size_t len)
@@ -195,53 +130,6 @@ uint8_t chksum(uint8_t *buf, size_t len)
     chk += *(idx++);
   }
   return chk;
-}
-
-void ParseCmd(StaticJsonDocument<256> &msg)
-{
-  Serial.print("cmd:");
-  const char *cs=msg["cmd"];
-  Serial.println(cs);
-
-  if (strcmp(cs, "ranges") == 0) {
-    int shelf = msg["shelf"];
-
-    JsonArray leds = msg["leds"].as<JsonArray>();
-
-    for (JsonVariant l : leds) {
-      int start = l["s"].as<int>();
-      int end = l["e"].as<int>();
-      int r = l["c"]["r"].as<int>();
-      int g = l["c"]["g"].as<int>();
-      int b = l["c"]["b"].as<int>();
-      shelves[shelf].SetRangeOneColor(r, g, b, start, end, false);
-      
-      char dbg[128];
-      snprintf(dbg, 128, "sh: %u, st: %u, end: %u, col(%u,%u,%u)",
-        shelf, start, end, r, g, b);
-      Serial.println(dbg);
-      delay(100);
-    }
-    Serial.println("Rendering");
-    shelves[shelf].renderer(shelves[shelf]);
-    Serial.println("Complete");
-  } else if (strcmp(cs, "entire") == 0) {
-    int r = msg["color"]["r"].as<int>();
-    int g = msg["color"]["g"].as<int>();
-    int b = msg["color"]["b"].as<int>();
-    char dbg[128];
-    snprintf(dbg, 128, "col(%u,%u,%u)", r, g, b);
-    Serial.println(dbg);
-    delay(100);
-    for (int i = 0;i < NUM_SHELVES; i++) {
-      shelves[i].SetOneColor(r, g, b);
-      shelves[i].renderer(shelves[i]);
-    }
-  } else if (strcmp(cs, "on") == 0) {
-    for (int i = 0; i < (int)NUM_SHELVES; i++) {
-        shelves[i].program(shelves[i]);
-    }
-  }
 }
 
 void DrainSerialBuffer()
@@ -258,18 +146,37 @@ void ReadAndParseMsg()
   byte buf[256];
   int num;
   int bytesRead = 0;
-  uint8_t msgLen = 0;
+  uint8_t universe = 0;
+  uint8_t cmd = 0;
+  uint16_t msgLen = 0;
   uint32_t startMs = 0;
-  StaticJsonDocument<256> msg;
+  
   // Get message length
-  if (softSer.available() > 0) {
+  if (softSer.available() >= 4) {
     num = softSer.readBytes(buf, 1);
     if (num != 1) {
-      Serial.println("Error reading message length.");
+      Serial.println("Error reading universe.");
     } else {
-      msgLen = buf[0];
+      universe = buf[0];
+      Serial.print("U: "); Serial.println(universe);
+    }
+
+    num = softSer.readBytes(buf, 1);
+    if (num != 1) {
+      Serial.println("Error reading command.");
+    } else {
+      cmd = buf[0];
+      Serial.print("C: "); Serial.println(cmd);
+    }
+
+    num = softSer.readBytes(buf, 2);
+    if (num != 2) {
+      Serial.println("Error reading length.");
+    } else {
+      msgLen = (buf[0] << 8) | buf[1];
       Serial.print("L: "); Serial.println(msgLen);
     }
+    
     startMs = millis();
     while (bytesRead < msgLen) {
       if ((num = softSer.readBytes(&buf[bytesRead], softSer.available())) > 0) {
@@ -278,35 +185,20 @@ void ReadAndParseMsg()
       if ((millis() - startMs) > 500) {
         Serial.println("Soft serial timeout");
         DrainSerialBuffer();
-        softSer.println("NAK");
         return;
       }
     }
-    if (bytesRead > 0) {
+    if (bytesRead == msgLen) {
       Serial.print("Read ");
       Serial.print(bytesRead);
-      Serial.println(" bytes.");
-  
-      uint8_t readChk = buf[bytesRead - 1];
-      uint8_t calcChk = chksum(buf, bytesRead - 1);
-      if (readChk != calcChk) {
-        Serial.print("Checksum failed, read: ");
-        Serial.print(readChk);
-        Serial.print(", calc:");
-        Serial.println(calcChk);
-        softSer.println("NAK");
-      } else {
-        Serial.println("Checksum OK");
-        softSer.println("ACK");
-        DeserializationError error = deserializeMsgPack(msg, buf);
-        // Test if parsing succeeded.
-        if (error) {
-          Serial.print("deserializeMsgPack() failed: ");
-          Serial.println(error.c_str());
-        } else {
-          ParseCmd(msg);
-        }
-      }
+      Serial.println(" bytes");
+
+      memcpy(pixelData, buf, msgLen);
+      shelves[universe].renderer(shelves[universe]);
+      shelves[universe].context.needsUpdate = true;
+      
+    } else {
+      Serial.print("Bad data packet");
     }
   }
 }
@@ -317,16 +209,5 @@ void loop()
   PrintDebugHeartbeat();
   
   ReadAndParseMsg();
-  
-  // This loop really screws up SoftwareSerial. Interrupts?
-#if 0
-    for (int i = 0; i < (int)NUM_SHELVES; i++) {
-        shelves[i].program(shelves[i]);
-    }
-//#else
-    WholeShelfChase();
-    delay(75);
-
-#endif
 }
  
